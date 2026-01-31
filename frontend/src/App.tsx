@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useSocket } from './hooks/useSocket';
+import { useToast, showToast } from './hooks/useToast';
 import { ItemCard } from './components/ItemCard';
+import { ToastContainer } from './components/ToastContainer';
+import { ActivityFeed } from './components/ActivityFeed';
+import { StatsDashboard } from './components/StatsDashboard';
 import { User } from './types';
+import { SoundManager } from './utils/soundManager';
+import { triggerWinConfetti } from './utils/confetti';
 import './index.css';
 
 function App() {
@@ -30,9 +36,58 @@ function App() {
         clearOutbid
     } = useSocket();
 
+    const { toasts, removeToast } = useToast();
+    const [soundManager] = useState(() => SoundManager.getInstance());
+    const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
+    const [activityFeedOpen, setActivityFeedOpen] = useState(false);
+    const [statsOpen, setStatsOpen] = useState(false);
+    const [previousWinningCount, setPreviousWinningCount] = useState(0);
+
     const handleBid = useCallback((itemId: string, amount: number) => {
         placeBid(itemId, amount, user.id, user.name);
-    }, [placeBid, user.id, user.name]);
+        soundManager.playBidPlaced();
+        showToast('Bid placed!', 'info', 2000);
+    }, [placeBid, user.id, user.name, soundManager]);
+
+    // Handle bid updates
+    useEffect(() => {
+        if (lastBidUpdate) {
+            const isMyBid = lastBidUpdate.bidderId === user.id;
+
+            if (isMyBid) {
+                showToast(`You're winning ${lastBidUpdate.item.title}!`, 'success');
+                soundManager.playWin();
+            } else {
+                soundManager.playNewBid();
+            }
+        }
+    }, [lastBidUpdate, user.id, soundManager]);
+
+    // Handle outbid notifications
+    useEffect(() => {
+        if (lastOutbid) {
+            soundManager.playOutbid();
+            showToast(
+                lastOutbid.error === 'OUTBID'
+                    ? 'You were outbid! Bid higher to win.'
+                    : lastOutbid.error === 'AUCTION_ENDED'
+                        ? 'Auction has ended!'
+                        : 'Bid failed',
+                'error'
+            );
+        }
+    }, [lastOutbid, soundManager]);
+
+    // Check for new wins and trigger confetti
+    useEffect(() => {
+        const winningCount = items.filter(item => item.highestBidder === user.id).length;
+
+        if (winningCount > previousWinningCount) {
+            triggerWinConfetti();
+        }
+
+        setPreviousWinningCount(winningCount);
+    }, [items, user.id, previousWinningCount]);
 
     // Sync server time periodically
     useEffect(() => {
@@ -51,6 +106,37 @@ function App() {
         return () => clearInterval(interval);
     }, []);
 
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyPress = (e: KeyboardEvent) => {
+            // A key - Open activity feed
+            if (e.key === 'a' || e.key === 'A') {
+                setActivityFeedOpen(prev => !prev);
+            }
+
+            // S key - Open stats
+            if (e.key === 's' || e.key === 'S') {
+                setStatsOpen(prev => !prev);
+            }
+
+            // M key - Toggle sound
+            if (e.key === 'm' || e.key === 'M') {
+                const newState = soundManager.toggle();
+                setSoundEnabled(newState);
+                showToast(newState ? '🔊 Sound enabled' : '🔇 Sound muted', 'info', 1500);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, [soundManager]);
+
+    const toggleSound = () => {
+        const newState = soundManager.toggle();
+        setSoundEnabled(newState);
+        showToast(newState ? '🔊 Sound enabled' : '🔇 Sound muted', 'info', 1500);
+    };
+
     return (
         <div className="app">
             {/* Header */}
@@ -64,6 +150,47 @@ function App() {
                     </div>
 
                     <div className="header-info">
+                        <button
+                            className="header-button"
+                            onClick={() => setActivityFeedOpen(true)}
+                            title="Activity Feed (A)"
+                        >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            <span className="header-button-text">Activity</span>
+                            <kbd className="kbd">A</kbd>
+                        </button>
+
+                        <button
+                            className="header-button"
+                            onClick={() => setStatsOpen(true)}
+                            title="Your Stats (S)"
+                        >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <span className="header-button-text">Stats</span>
+                            <kbd className="kbd">S</kbd>
+                        </button>
+
+                        <button
+                            className="header-button"
+                            onClick={toggleSound}
+                            title="Toggle Sound (M)"
+                        >
+                            {soundEnabled ? (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                                    <path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" />
+                                </svg>
+                            ) : (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                                    <path d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6" />
+                                </svg>
+                            )}
+                            <kbd className="kbd">M</kbd>
+                        </button>
+
                         <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
                             <span className="status-dot"></span>
                             {isConnected ? 'Live' : 'Connecting...'}
@@ -86,6 +213,17 @@ function App() {
                     <section className="hero">
                         <h2>Live Auctions</h2>
                         <p>Bid in real-time and win exclusive items before time runs out!</p>
+                        <div className="hero-shortcuts">
+                            <span className="shortcut-hint">
+                                <kbd>A</kbd> Activity
+                            </span>
+                            <span className="shortcut-hint">
+                                <kbd>S</kbd> Stats
+                            </span>
+                            <span className="shortcut-hint">
+                                <kbd>M</kbd> Sound
+                            </span>
+                        </div>
                     </section>
 
                     {/* Items Grid */}
@@ -115,8 +253,26 @@ function App() {
 
             {/* Footer */}
             <footer className="footer">
-                <p>© 2024 LiveBid. Real-time auction platform.</p>
+                <p>© 2024 LiveBid. Real-time auction platform with advanced features.</p>
             </footer>
+
+            {/* Toast Notifications */}
+            <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+            {/* Activity Feed */}
+            <ActivityFeed
+                lastBidUpdate={lastBidUpdate}
+                isOpen={activityFeedOpen}
+                onClose={() => setActivityFeedOpen(false)}
+            />
+
+            {/* Stats Dashboard */}
+            <StatsDashboard
+                items={items}
+                userId={user.id}
+                isOpen={statsOpen}
+                onClose={() => setStatsOpen(false)}
+            />
         </div>
     );
 }
