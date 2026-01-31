@@ -21,7 +21,7 @@ function initializeItems(): void {
             currentBid: 5000,
             highestBidder: null,
             highestBidderName: null,
-            endTime: now + 5 * 60 * 1000, // 5 minutes from now
+            endTime: now + 30 * 60 * 1000, // 30 minutes
             bidCount: 0
         },
         {
@@ -32,7 +32,7 @@ function initializeItems(): void {
             currentBid: 2500,
             highestBidder: null,
             highestBidderName: null,
-            endTime: now + 3 * 60 * 1000, // 3 minutes from now
+            endTime: now + 20 * 60 * 1000, // 20 minutes
             bidCount: 0
         },
         {
@@ -43,7 +43,7 @@ function initializeItems(): void {
             currentBid: 1500,
             highestBidder: null,
             highestBidderName: null,
-            endTime: now + 7 * 60 * 1000, // 7 minutes from now
+            endTime: now + 45 * 60 * 1000, // 45 minutes
             bidCount: 0
         },
         {
@@ -54,7 +54,7 @@ function initializeItems(): void {
             currentBid: 80000,
             highestBidder: null,
             highestBidderName: null,
-            endTime: now + 10 * 60 * 1000, // 10 minutes from now
+            endTime: now + 60 * 60 * 1000, // 60 minutes
             bidCount: 0
         },
         {
@@ -65,7 +65,7 @@ function initializeItems(): void {
             currentBid: 25000,
             highestBidder: null,
             highestBidderName: null,
-            endTime: now + 4 * 60 * 1000, // 4 minutes from now
+            endTime: now + 25 * 60 * 1000, // 25 minutes
             bidCount: 0
         },
         {
@@ -76,7 +76,7 @@ function initializeItems(): void {
             currentBid: 15000,
             highestBidder: null,
             highestBidderName: null,
-            endTime: now + 6 * 60 * 1000, // 6 minutes from now
+            endTime: now + 40 * 60 * 1000, // 40 minutes
             bidCount: 0
         }
     ];
