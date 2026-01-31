@@ -2,6 +2,14 @@
 
 A real-time auction platform where users compete to buy items in the final seconds. Built with Node.js, Socket.io, React, and TypeScript.
 
+## 🔗 Live Demo
+
+**🌐 Frontend**: [https://levich-assignment-three.vercel.app](https://levich-assignment-three.vercel.app)
+
+**⚙️ Backend API**: [https://livebid-backend.onrender.com](https://livebid-backend.onrender.com)
+
+---
+
 ![Live Bidding Platform](https://img.shields.io/badge/Status-Live-brightgreen)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js)
 ![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)
