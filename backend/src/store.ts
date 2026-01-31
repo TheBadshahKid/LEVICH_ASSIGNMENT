@@ -22,6 +22,7 @@ function initializeItems(): void {
             highestBidder: null,
             highestBidderName: null,
             endTime: now + 30 * 60 * 1000, // 30 minutes
+            duration: 30 * 60 * 1000, // 30 minutes
             bidCount: 0
         },
         {
@@ -33,6 +34,7 @@ function initializeItems(): void {
             highestBidder: null,
             highestBidderName: null,
             endTime: now + 20 * 60 * 1000, // 20 minutes
+            duration: 20 * 60 * 1000, // 20 minutes
             bidCount: 0
         },
         {
@@ -44,6 +46,7 @@ function initializeItems(): void {
             highestBidder: null,
             highestBidderName: null,
             endTime: now + 45 * 60 * 1000, // 45 minutes
+            duration: 45 * 60 * 1000, // 45 minutes
             bidCount: 0
         },
         {
@@ -55,6 +58,7 @@ function initializeItems(): void {
             highestBidder: null,
             highestBidderName: null,
             endTime: now + 60 * 60 * 1000, // 60 minutes
+            duration: 60 * 60 * 1000, // 60 minutes
             bidCount: 0
         },
         {
@@ -66,6 +70,7 @@ function initializeItems(): void {
             highestBidder: null,
             highestBidderName: null,
             endTime: now + 25 * 60 * 1000, // 25 minutes
+            duration: 25 * 60 * 1000, // 25 minutes
             bidCount: 0
         },
         {
@@ -77,6 +82,7 @@ function initializeItems(): void {
             highestBidder: null,
             highestBidderName: null,
             endTime: now + 40 * 60 * 1000, // 40 minutes
+            duration: 40 * 60 * 1000, // 40 minutes
             bidCount: 0
         }
     ];
@@ -150,6 +156,37 @@ export async function placeBid(request: BidRequest): Promise<BidResult> {
 export function resetItems(): void {
     items.clear();
     initializeItems();
+}
+
+/**
+ * Check if any auctions have expired by more than 30 seconds
+ * If so, reset them and return the list of reset items
+ */
+export function checkAndResetExpiredItems(): AuctionItem[] {
+    const expiredItems: AuctionItem[] = [];
+    const now = Date.now();
+    const GRACE_PERIOD = 30 * 1000; // 30 seconds
+
+    items.forEach((item, id) => {
+        // If auction ended more than 30s ago
+        if (now > item.endTime + GRACE_PERIOD) {
+            // Reset the item
+            const newItem = {
+                ...item,
+                currentBid: item.startingPrice,
+                highestBidder: null,
+                highestBidderName: null,
+                bidCount: 0,
+                endTime: now + item.duration // Restart with original duration
+            };
+
+            items.set(id, newItem);
+            expiredItems.push(newItem);
+            console.log(`🔄 Auto-restarting auction: ${item.title}`);
+        }
+    });
+
+    return expiredItems;
 }
 
 // Initialize on module load

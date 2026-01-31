@@ -202,7 +202,7 @@ function App() {
             </main>
 
             <footer className="footer">
-                <p>© 2024 LiveBid. Real-time auction platform.</p>
+                <p>© 2026 LiveBid. Real-time auction platform.</p>
             </footer>
 
             <ToastContainer toasts={toasts} onRemove={removeToast} />

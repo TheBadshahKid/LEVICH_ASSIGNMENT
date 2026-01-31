@@ -9,6 +9,7 @@ export interface AuctionItem {
     highestBidder: string | null;
     highestBidderName: string | null;
     endTime: number;
+    duration: number;
     bidCount: number;
 }
 

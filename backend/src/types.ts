@@ -9,6 +9,7 @@ export interface AuctionItem {
     highestBidder: string | null;
     highestBidderName: string | null;
     endTime: number; // Unix timestamp in milliseconds
+    duration: number; // Duration in milliseconds (for auto-restart)
     bidCount: number;
 }
 

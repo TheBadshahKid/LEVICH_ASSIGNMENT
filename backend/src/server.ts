@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import cors from 'cors';
-import { getAllItems, placeBid, resetItems } from './store';
+import { getAllItems, placeBid, resetItems, checkAndResetExpiredItems } from './store';
 import { BidRequest, SocketEvents, ServerTimeResponse, ItemsResponse } from './types';
 
 const app = express();
@@ -129,6 +129,25 @@ io.on(SocketEvents.CONNECT, (socket: Socket) => {
         console.log(`🔌 Client disconnected: ${socket.id}`);
     });
 });
+
+// ============================================
+// AUTO-RESTART LOOP
+// ============================================
+
+// Check for expired auctions every 5 seconds
+setInterval(() => {
+    const resetItemsList = checkAndResetExpiredItems();
+
+    if (resetItemsList.length > 0) {
+        console.log(`📢 Broadcasting ${resetItemsList.length} restarted auctions`);
+
+        // Broadcast the full updated list to ensure everyone is in sync
+        io.emit('INIT_ITEMS', {
+            items: getAllItems(),
+            serverTime: Date.now()
+        });
+    }
+}, 5000);
 
 // ============================================
 // SERVER STARTUP
